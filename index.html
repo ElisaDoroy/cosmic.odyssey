@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cosmic Odyssey: Adaptive Science Suite</title>
+<style>
+:root{--bg:#030511;--cyan:#00f0ff;--purple:#9d00ff;--gold:#ffaa00;--green:#39ff14}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at top,#111a46,var(--bg) 65%);color:#f1f5f9;font-family:Segoe UI,Arial,sans-serif;display:grid;place-items:center;padding:22px}
+#stars{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}.wrap{position:relative;width:min(850px,100%);z-index:1}
+.panel{background:#0a0e23e8;border:1px solid #00f0ff99;border-radius:18px;padding:clamp(20px,5vw,40px);box-shadow:0 0 30px #00f0ff22;backdrop-filter:blur(10px)}
+.hidden{display:none!important}h1,h2{text-align:center;letter-spacing:2px;background:linear-gradient(45deg,var(--cyan),var(--purple));color:transparent;background-clip:text;margin:0 0 16px}
+p{line-height:1.55;color:#dbeafe}.sub{text-align:center;color:#a5b4fc;margin:0 0 22px}
+label{display:block;color:var(--cyan);font-size:.85rem;letter-spacing:1px;margin:15px 0 7px;text-transform:uppercase}
+input,select{width:100%;padding:13px;background:#050819;color:white;border:1px solid #00f0ff66;border-radius:8px;font-size:1rem}
+button{border:1px solid #00f0ff77;border-radius:9px;padding:12px 15px;background:linear-gradient(135deg,#007e99,#7300ba);color:white;font-weight:700;cursor:pointer;transition:.2s}
+button:hover{transform:translateY(-2px);box-shadow:0 0 15px #00f0ff44}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.primary{width:100%;margin-top:20px;background:linear-gradient(135deg,var(--cyan),var(--purple));color:#030511}
+.hud{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;background:#ffffff09;padding:14px;border-left:4px solid var(--purple);border-radius:8px;margin-bottom:24px}.hud span{color:var(--cyan);font-weight:bold}
+.realm{text-align:center;color:var(--gold);font-weight:bold;font-size:1.2rem}.desc{text-align:center;color:#aab9dc}
+.scramble{font-size:clamp(2rem,8vw,3.5rem);font-weight:900;letter-spacing:clamp(3px,1vw,9px);text-align:center;margin:22px 0;text-shadow:0 0 18px var(--cyan);overflow-wrap:anywhere}
+.progress{height:8px;background:#17203d;border-radius:20px;overflow:hidden;margin:15px 0}.bar{height:100%;background:linear-gradient(90deg,var(--cyan),var(--purple));width:0;transition:width .3s}
+.answer-row{display:flex;gap:10px;margin:16px auto;max-width:550px}.answer-row input{flex:1;min-width:0}.answer-row button{flex-shrink:0}
+.feedback{text-align:center;min-height:27px;font-weight:bold;margin:12px 0}.good{color:var(--green)}.bad{color:#ff8b9b}
+.fact{margin-top:15px;padding:16px;background:#0005;border-top:3px solid var(--green);border-radius:8px}.fact h3{margin:0 0 8px;color:var(--green);font-size:1rem}.fact p{margin:0}
+.chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-top:18px}.chip{font-size:.83rem;color:#91a5d0;border:1px solid #2b3764;border-radius:8px;padding:10px}.chip.current{border-color:var(--cyan);color:white}.chip.done{border-color:var(--green);color:var(--green)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}.actions button{flex:1}
+.note{text-align:center;color:#8492b8;font-size:.8rem;margin-top:15px}
+@media(max-width:520px){.answer-row{flex-direction:column}.actions{display:grid;grid-template-columns:1fr 1fr}.hud{font-size:.85rem}}
+</style></head>
+<body><canvas id="stars"></canvas><main class="wrap">
+<section id="start" class="panel">
+<h1>🚀 Cosmic Odyssey</h1><p class="sub">Adaptive Science Suite · Word Scramble Mission</p>
+<p style="text-align:center">Welcome, cadet! Decode science words, unlock cosmic realms, and collect facts as you explore the universe.</p>
+<label for="player">Cadet name</label><input id="player" maxlength="24" placeholder="Enter your name (optional)">
+<label for="difficulty">Mission difficulty</label><select id="difficulty"><option value="easy">Easy — more hints</option><option value="normal" selected>Normal — balanced</option><option value="hard">Hard — fewer hints</option></select>
+<button id="launch" class="primary">Launch Mission ✨</button><p class="note">Downloadable single-file game · Works offline in your browser</p>
+</section>
+<section id="game" class="panel hidden" aria-live="polite">
+<div class="hud"><div>CADET: <span id="cadet">Explorer</span></div><div>SCORE: <span id="score">0</span></div><div>LEVEL: <span id="levelnum">1</span>/8</div></div>
+<div class="realm" id="realm"></div><p class="desc" id="desc"></p><div class="progress"><div id="bar" class="bar"></div></div>
+<div class="scramble" id="scramble">TARS</div><p class="desc" id="hint"></p>
+<form id="form" class="answer-row"><input id="answer" autocomplete="off" placeholder="Type your answer..." aria-label="Your answer" required><button>Decode</button></form>
+<div id="feedback" class="feedback" role="status"></div>
+<div id="fact" class="fact hidden"><h3 id="facttitle">✨ COSMIC FACT UNLOCKED</h3><p id="facttext"></p></div>
+<div id="chips" class="chips"></div>
+<div class="actions"><button id="hintbtn">💡 Hint</button><button id="skipbtn">⏭ Skip word</button><button id="soundbtn">🔊 Sound: On</button><button id="menubtn">↩ Menu</button></div>
+</section>
+<section id="end" class="panel hidden"><h1>🌟 Mission Complete!</h1><p id="endmsg" style="text-align:center"></p><div class="fact"><h3>🏆 FINAL REPORT</h3><p id="report"></p></div><div class="actions"><button id="replay" class="primary">Play Again 🚀</button><button id="endmenu">Main Menu</button></div></section>
+</main>
+<script>
+(()=>{const levels=[
+{name:"🌌 Cosmic Basics",desc:"Meet the building blocks of space.",words:[
+["STAR","TARS","A glowing ball of hot gas, like our Sun.","The Sun is a star. Its light takes about 8 minutes and 20 seconds to reach Earth."],
+["MOON","ONOM","A natural object that orbits a planet.","Earth's Moon is slowly moving away from Earth by about 3.8 centimetres each year."],
+["ORBIT","TROIB","The path an object follows around another object.","Earth takes about 365.25 days to orbit the Sun."]]},
+{name:"🪨 Planet Formation",desc:"Discover the rocky worlds of our solar system.",words:[
+["PLANET","TALPEN","A nearly round object that orbits a star.","Our solar system has eight recognized planets."],
+["GRAVITY","VITYGRA","The force that attracts objects with mass.","Gravity helps keep planets in orbit around the Sun."],
+["CRATER","TERCAR","A bowl-shaped hollow often made by an impact.","The Moon has many craters because it has little weather to erase them."]]},
+{name:"🌋 Young Earth",desc:"Explore the hot early Earth and its changing surface.",words:[
+["VOLCANO","CANOVOL","An opening where molten rock, ash, and gases escape.","Volcanic activity released gases that helped form Earth's early atmosphere."],
+["MAGMA","GAMAM","Molten rock beneath Earth's surface.","Molten rock is called magma underground and lava at the surface."],
+["CRUST","CURST","Earth's thin, outermost solid layer.","Earth's crust is divided into large pieces called tectonic plates."]]},
+{name:"🌊 Oceans & Air",desc:"Discover water and the atmosphere.",words:[
+["OCEAN","CENOA","A vast body of salty water.","The global ocean covers about 71% of Earth's surface."],
+["CLOUD","WODLC","Tiny water droplets or ice crystals gathered in the sky.","Clouds form when water vapour cools and condenses."],
+["ATMOSPHERE","SPHEREATMO","The layer of gases surrounding a planet.","Earth's atmosphere is mostly nitrogen, followed by oxygen."]]},
+{name:"🦠 First Life",desc:"Meet tiny organisms from Earth's distant past.",words:[
+["MICROBE","BEMICRO","A tiny living thing, usually seen with a microscope.","The earliest known life on Earth was microscopic."],
+["BACTERIA","TERIABAC","Single-celled organisms found in many environments.","Some ancient microbes helped change Earth's atmosphere."],
+["FOSSIL","SILFO","Preserved remains or traces of ancient life.","Fossils reveal what organisms lived long ago."]]},
+{name:"🌿 Life Evolves",desc:"Explore how living things and ecosystems change.",words:[
+["PHOTOSYNTHESIS","SYNTHESIPHOTOS","How plants and some other organisms use light to make sugars.","Photosynthesis uses light, water, and carbon dioxide; many organisms release oxygen."],
+["EVOLUTION","TIONEVOLU","Changes in inherited traits of populations over generations.","Evolution helps explain the diversity of life on Earth."],
+["ECOSYSTEM","SYSTEMECO","Living things interacting with their surroundings.","An ecosystem includes living things and non-living parts of their environment."]]},
+{name:"🦖 Ancient Animals",desc:"Travel through ancient ecosystems and deep time.",words:[
+["DINOSAUR","SAURDINO","A group of reptiles that lived during the Mesozoic Era.","Birds are living descendants of theropod dinosaurs."],
+["TRILOBITE","LOBITETRI","An extinct marine animal with a segmented body.","Trilobites lived in ancient seas for hundreds of millions of years."],
+["EXTINCTION","TIONEXTINC","When a species or group has no living members left.","Non-avian dinosaurs went extinct about 66 million years ago; birds survived."]]},
+{name:"🌍 Modern Earth",desc:"Complete your journey through Earth's changing story.",words:[
+["CONTINENT","TINNOCENT","One of Earth's very large land areas.","Continents move slowly because they sit on tectonic plates."],
+["BIODIVERSITY","DIVERSITYBIO","The variety of life in a place or across the planet.","Biodiversity includes variety within species, between species, and among ecosystems."],
+["CLIMATE","MATECLI","The long-term pattern of weather in a region.","Climate describes long-term patterns; weather describes short-term conditions."]]}
+];
+const $=id=>document.getElementById(id);let li=0,wi=0,score=0,hints=0,skips=0,name="Explorer",mode="normal",soundOn=true,locked=false,wins=[],audio;
+function play(f=440,d=.12,type="sine",v=.035){if(!soundOn)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==="suspended")audio.resume();let o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+d);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+d)}catch(e){}}
+function fanfare(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>play(f,.22,"triangle",.05),i*110))}
+function screen(which){["start","game","end"].forEach(x=>$(x).classList.toggle("hidden",x!==which))}
+function begin(){name=$("player").value.trim()||"Explorer";mode=$("difficulty").value;li=wi=score=hints=skips=0;wins=levels.map(()=>false);$("cadet").textContent=name;$("score").textContent="0";$("levelnum").textContent=levels.length;screen("game");render();play(660)}
+function render(){locked=false;let l=levels[li],w=l.words[wi];$("realm").textContent=l.name;$("desc").textContent=l.desc;$("levelnum").textContent=li+1;$("bar").style.width=((li*3+wi)/24*100)+"%";$("scramble").textContent=w[1];$("hint").textContent=mode==="hard"?"Decode the science term.":w[2];$("answer").value="";$("answer").disabled=false;$("feedback").textContent="";$("feedback").className="feedback";$("fact").classList.add("hidden");$("chips").innerHTML=levels.map((x,i)=>`<div class="chip ${i===li?"current":wins[i]?"done":""}">${wins[i]?"✓ ":i===li?"▶ ":"🔒 "}${x.name}</div>`).join("");}
+function answer(e){e.preventDefault();if(locked)return;let w=levels[li].words[wi],guess=$("answer").value.trim().toUpperCase();if(!guess)return;if(guess===w[0]){locked=true;let pts=mode==="easy"?100:mode==="hard"?150:125;score+=pts;$("score").textContent=score;$("feedback").textContent=`Correct! +${pts} points`; $("feedback").className="feedback good";$("facttitle").textContent="✨ COSMIC FACT UNLOCKED";$("facttext").textContent=w[3];$("fact").classList.remove("hidden");$("answer").disabled=true;play(880,.12,"triangle");setTimeout(()=>play(1175,.18,"triangle"),100);setTimeout(next,1800)}else{$("feedback").textContent="Not quite! Try again, cadet."; $("feedback").className="feedback bad";play(180,.15,"sawtooth",.025)}}
+function next(){if(wi<2){wi++;render();return}wins[li]=true;fanfare();if(li<levels.length-1){li++;wi=0;render();$("feedback").textContent="Realm cleared! A new sector is unlocked."; $("feedback").className="feedback good"}else finish()}
+function hint(){if(locked)return;hints++;let w=levels[li].words[wi][0];$("feedback").textContent=mode==="easy"?`Hint: ${w[0]}… (${w.length} letters)`:`First letter: ${w[0]} · ${w.length} letters`;play(520)}
+function skip(){if(locked)return;skips++;locked=true;$("feedback").textContent="Skipped! The answer was "+levels[li].words[wi][0]+".";$("feedback").className="feedback bad";setTimeout(()=>{if(wi<2){wi++;render()}else{wins[li]=true;if(li<levels.length-1){li++;wi=0;render()}else finish()}},900)}
+function finish(){ $("bar").style.width="100%";screen("end");fanfare();$("endmsg").textContent=`Amazing work, ${name}! You completed the Cosmic Odyssey.`;$("report").textContent=`Final score: ${score} points. Realms explored: ${wins.filter(Boolean).length} of ${levels.length}. Hints used: ${hints}. Words skipped: ${skips}. ${score>=2500?"You're a Cosmic Science Master!":score>=1500?"You're a Stellar Explorer!":"You're on your way to becoming a science star!"}`}
+function menu(){screen("start")}
+$("launch").onclick=begin;$("form").addEventListener("submit",answer);$("hintbtn").onclick=hint;$("skipbtn").onclick=skip;$("menubtn").onclick=menu;$("replay").onclick=begin;$("endmenu").onclick=menu;
+$("soundbtn").onclick=()=>{soundOn=!soundOn;$("soundbtn").textContent=soundOn?"🔊 Sound: On":"🔇 Sound: Off";if(soundOn)fanfare()};
+const c=$("stars"),ctx=c.getContext("2d");let stars=[];function resize(){c.width=innerWidth*devicePixelRatio;c.height=innerHeight*devicePixelRatio;c.style.width=innerWidth+"px";c.style.height=innerHeight+"px";ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);stars=Array.from({length:Math.min(170,Math.floor(innerWidth/6))},()=>({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.5+.2,s:Math.random()*.35+.05,a:Math.random()*.6+.2}))}function animate(){ctx.clearRect(0,0,innerWidth,innerHeight);for(let s of stars){s.y+=s.s;if(s.y>innerHeight){s.y=0;s.x=Math.random()*innerWidth}ctx.globalAlpha=s.a;ctx.fillStyle="#c7f9ff";ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,7);ctx.fill()}ctx.globalAlpha=1;requestAnimationFrame(animate)}addEventListener("resize",resize);resize();animate();
+})();
+</script></body></html>
